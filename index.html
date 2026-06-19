@@ -10,7 +10,12 @@
 
 <!-- STATUS -->
 <p id="status">Not logged in</p>
+<h3>ID Token (JWT)</h3>
+<pre id="tokenBox" style="white-space: pre-wrap; word-break: break-word;">
+Not logged in
+</pre>
 
+<button onclick="showToken()">Show ID Token</button>
 <hr>
 
 <!-- LOGIN BOX -->
@@ -89,9 +94,28 @@ onAuthStateChanged(auth, user => {
     document.getElementById("relayBox").style.display = "none";
   }
 });
+  
+window.showToken = async () => {
+  const user = auth.currentUser;
 
+  if (!user) {
+    document.getElementById("tokenBox").innerText =
+      "Not logged in";
+    return;
+  }
+
+  try {
+    const token = await user.getIdToken(true); // force refresh optional
+    document.getElementById("tokenBox").innerText = token;
+  } catch (err) {
+    document.getElementById("tokenBox").innerText =
+      "Error: " + err.message;
+  }
+};
 </script>
 
+
+  
 <!-- MQTT -->
 <script>
 
