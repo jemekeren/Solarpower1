@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My SolarPower1 Test</title>
+</head>
+<body>
+
+<h2>Relay Control</h2>
+
+<button onclick="connectMQTT()">Connect</button>
+<button onclick="send('1')">ON</button>
+<button onclick="send('0')">OFF</button>
+
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+<script>
+let client;
+
+function connectMQTT() {
+  client = mqtt.connect("wss://672d4e9e82c440c19da1aa8491685a26.s1.eu.hivemq.cloud:8884/mqtt", {
+    username: "Solarpower1",
+    password: "Solarpower1",
+    clean: true,
+    connectTimeout: 4000
+  });
+
+  client.on("connect", () => {
+    alert("Connected to MQTT");
+  });
+
+  client.on("error", (err) => {
+    console.log(err);
+  });
+}
+
+function send(state) {
+  if (!client || !client.connected) {
+    alert("Not connected");
+    return;
+  }
+
+  client.publish("solarpanel/switch", state);
+}
+</script>
+
+</body>
+</html>
