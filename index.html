@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>Jim's Solar Power Switch Control</title>
+<title>Jim's Solar Control</title>
 
 <style>
 body{
@@ -50,7 +50,7 @@ input{
 
 <body>
 
-<h2>Jim's Solar Power Switch ControL</h2>
+<h2>Solar Relay Dashboard</h2>
 
 <p id="status">Not logged in</p>
 
@@ -70,7 +70,7 @@ input{
 
 <div class="card">
 
-<h3>Press my button to control</h3>
+<h3>Relay Control</h3>
 
 <button onclick="setRelay('0')">
 ON
@@ -143,19 +143,25 @@ import {
 }
 from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
-const firebaseConfig = {
+const  = {
 
- apiKey: "AIzaSyAIU_4JrFj1bI3cRXMUNCwGhtiUr4eodBQ",
- authDomain: "solarcontrol-12668.firebaseapp.com",
- databaseURL: "https://solarcontrol-12668-default-rtdb.asia-southeast1.firebasedatabase.app",
- projectId: "solarcontrol-12668",
- storageBucket: "solarcontrol-12668.firebasestorage.app",
- messagingSenderId: "566361176566",
- appId: "1:566361176566:web:be3a4c901333c77a496fd7",
+  apiKey: "AIzaSyAIU_4JrFj1bI3cRXMUNCwGhtiUr4eodBQ",
+
+  authDomain: "solarcontrol-12668.firebaseapp.com",
+
+  databaseURL: "https://solarcontrol-12668-default-rtdb.asia-southeast1.firebasedatabase.app",
+
+  projectId: "solarcontrol-12668",
+
+  storageBucket: "solarcontrol-12668.firebasestorage.app",
+
+  messagingSenderId: "566361176566",
+
+  appId: "1:566361176566:web:be3a4c901333c77a496fd7"
 
 };
 
-const app = initializeApp(firebaseConfig);
+const app = initializeApp();
 
 const auth = getAuth(app);
 
