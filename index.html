@@ -1,156 +1,290 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>SolarPower1 Relay Control</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Jim's Solar Power Control</title>
+
+<style>
+body{
+    font-family:Arial,sans-serif;
+    max-width:900px;
+    margin:auto;
+    padding:20px;
+}
+
+.card{
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:15px;
+    margin-top:15px;
+}
+
+button{
+    padding:12px 25px;
+    margin:5px;
+    font-size:16px;
+    cursor:pointer;
+}
+
+input{
+    padding:10px;
+    margin:5px;
+    width:250px;
+}
+
+.value{
+    font-size:22px;
+    font-weight:bold;
+    color:#0066cc;
+}
+
+.green{
+    color:green;
+}
+
+.red{
+    color:red;
+}
+</style>
 </head>
 
 <body>
 
-<h2>Solar Relay Dashboard</h2>
+<h2>Solar Power Dashboard</h2>
 
-<!-- STATUS -->
 <p id="status">Not logged in</p>
-<h3>ID Token (JWT)</h3>
-<pre id="tokenBox" style="white-space: pre-wrap; word-break: break-word;">
-Not logged in
-</pre>
 
-<button onclick="showToken()">Show ID Token</button>
-<hr>
+<div id="loginBox" class="card">
 
-<!-- LOGIN BOX -->
-<div id="loginBox">
-  <h3>Login</h3>
-  <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Password">
-  <button onclick="login()">Login</button>
+<h3>Login</h3>
+
+<input id="email" type="email" placeholder="Email"><br>
+
+<input id="password" type="password" placeholder="Password"><br>
+
+<button onclick="login()">Login</button>
+
 </div>
 
-<!-- RELAY BOX (hidden initially) -->
-<div id="relayBox" style="display:none;">
-  <h3>Relay Control</h3>
+<div id="dashboard" style="display:none;">
 
-  <button onclick="connectMQTT()">Connect MQTT</button>
-  <button onclick="send('1')">OFF</button>
-  <button onclick="send('0')">ON</button>
+<div class="card">
+
+<h3>Relay Control</h3>
+
+<button onclick="setRelay('0')">
+ON
+</button>
+
+<button onclick="setRelay('1')">
+OFF
+</button>
+
 </div>
 
-<!-- MQTT LIB -->
-<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<div class="card">
 
-<!-- FIREBASE + AUTH -->
+<h3>Relay Status</h3>
+
+<div class="value" id="relayStatus">
+Loading...
+</div>
+
+</div>
+
+<div class="card">
+
+<h3>AC Voltage</h3>
+
+<div class="value" id="acVoltage">
+--
+</div>
+
+</div>
+
+<div class="card">
+
+<h3>DC Voltage</h3>
+
+<div class="value" id="dcVoltage">
+--
+</div>
+
+</div>
+
+<div class="card">
+
+<button onclick="logout()">
+Logout
+</button>
+
+</div>
+
+</div>
+
 <script type="module">
 
-import { initializeApp } 
+import { initializeApp }
 from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 
-import { 
-  getAuth, 
-  signInWithEmailAndPassword, 
-  onAuthStateChanged 
-} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import {
+getAuth,
+signInWithEmailAndPassword,
+signOut,
+onAuthStateChanged
+}
+from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
-/* 🔴 YOUR FIREBASE CONFIG */
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+import {
+getDatabase,
+ref,
+set,
+onValue
+}
+from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
 const firebaseConfig = {
-  apiKey: "AIzaSyCAPPjCvtuQ8gGgITH5gqcXBxlB0c9iU9E",
-  authDomain: "solarpowercontrol-21a1c.firebaseapp.com",
-  projectId: "solarpowercontrol-21a1c",
-  storageBucket: "solarpowercontrol-21a1c.firebasestorage.app",
-  messagingSenderId: "836080376430",
-  appId: "1:836080376430:web:12bd6396690a6ff3cde47f",
-  measurementId: "G-7FTQKBVP65"
+
+apiKey: "AIzaSyAIU_4JrFj1bI3cRXMUNCwGhtiUr4eodBQ",
+
+authDomain: "solarcontrol-12668.firebaseapp.com",
+
+databaseURL:
+"https://solarcontrol-12668-default-rtdb.asia-southeast1.firebasedatabase.app",
+
+projectId: "solarcontrol-12668",
+
+storageBucket: "solarcontrol-12668.firebasestorage.app",
+
+messagingSenderId: "566361176566",
+
+appId: "1:566361176566:web:be3a4c901333c77a496fd7"
+
 };
 
 const app = initializeApp(firebaseConfig);
+
 const auth = getAuth(app);
 
-/* LOGIN */
+const db = getDatabase(app);
+
 window.login = async () => {
-  const email = document.getElementById("email").value;
-  const pass = document.getElementById("password").value;
 
-  try {
-    await signInWithEmailAndPassword(auth, email, pass);
-  } catch (err) {
-    alert("Login failed: " + err.message);
-  }
+const email =
+document.getElementById("email").value;
+
+const password =
+document.getElementById("password").value;
+
+try {
+
+await signInWithEmailAndPassword(
+auth,
+email,
+password
+);
+
+} catch(err){
+
+alert(err.message);
+
+}
+
 };
 
-/* AUTH STATE CONTROL UI */
-onAuthStateChanged(auth, user => {
-  if (user) {
-    document.getElementById("status").innerText =
-      "Logged in: " + user.email;
+window.logout = async () => {
+await signOut(auth);
+};
 
-    document.getElementById("loginBox").style.display = "none";
-    document.getElementById("relayBox").style.display = "block";
+window.setRelay = async(state)=>{
 
-  } else {
-    document.getElementById("status").innerText =
-      "Not logged in";
+try{
 
-    document.getElementById("loginBox").style.display = "block";
-    document.getElementById("relayBox").style.display = "none";
-  }
+await set(
+ref(db,"command_switch"),
+state
+);
+
+}
+catch(err){
+
+alert(err.message);
+
+}
+
+};
+
+onAuthStateChanged(auth,(user)=>{
+
+if(user){
+
+document.getElementById("status").innerText =
+"Logged in: " + user.email;
+
+document.getElementById("loginBox").style.display =
+"none";
+
+document.getElementById("dashboard").style.display =
+"block";
+
+}
+else{
+
+document.getElementById("status").innerText =
+"Not logged in";
+
+document.getElementById("loginBox").style.display =
+"block";
+
+document.getElementById("dashboard").style.display =
+"none";
+
+}
+
 });
-  
-window.showToken = async () => {
-  const user = auth.currentUser;
 
-  if (!user) {
-    document.getElementById("tokenBox").innerText =
-      "Not logged in";
-    return;
-  }
+onValue(ref(db,"status_ac_voltage"),(snapshot)=>{
 
-  try {
-    const token = await user.getIdToken(true); // force refresh optional
-    document.getElementById("tokenBox").innerText = token;
-  } catch (err) {
-    document.getElementById("tokenBox").innerText =
-      "Error: " + err.message;
-  }
-};
-</script>
+document.getElementById("acVoltage").innerText =
+snapshot.val() ?? "--";
 
+});
 
-  
-<!-- MQTT -->
-<script>
+onValue(ref(db,"status_dc_voltage"),(snapshot)=>{
 
-let client;
+document.getElementById("dcVoltage").innerText =
+snapshot.val() ?? "--";
 
-/* CONNECT MQTT */
-function connectMQTT() {
-  client = mqtt.connect(
-    "wss://672d4e9e82c440c19da1aa8491685a26.s1.eu.hivemq.cloud:8884/mqtt",
-    {
-      username: "Solarpower1",
-      password: "Solarpower1",
-      clean: true,
-      connectTimeout: 4000
-    }
-  );
+});
 
-  client.on("connect", () => {
-    alert("MQTT Connected");
-  });
+onValue(ref(db,"status_switch"),(snapshot)=>{
 
-  client.on("error", (err) => {
-    console.log("MQTT error:", err);
-  });
+const value = snapshot.val();
+
+const el =
+document.getElementById("relayStatus");
+
+if(value === "relay_on"){
+
+el.innerHTML =
+'<span class="green">RELAY ON</span>';
+
+}
+else if(value === "relay_off"){
+
+el.innerHTML =
+'<span class="red">RELAY OFF</span>';
+
+}
+else{
+
+el.innerText = "--";
+
 }
 
-/* SEND COMMAND */
-function send(state) {
-  if (!client || !client.connected) {
-    alert("MQTT not connected");
-    return;
-  }
-
-  client.publish("solarpanel/switch", state);
-}
+});
 
 </script>
 
