@@ -8,7 +8,7 @@
 
 <style>
 body{
-    font-family:Arial,sans-serif;
+    font-family:Arial;
     max-width:800px;
     margin:auto;
     padding:20px;
@@ -22,7 +22,7 @@ body{
 }
 
 button{
-    padding:12px 20px;
+    padding:12px 18px;
     margin:5px;
     cursor:pointer;
 }
@@ -34,23 +34,18 @@ input{
 }
 
 .value{
-    font-size:24px;
+    font-size:22px;
     font-weight:bold;
 }
 
-.green{
-    color:green;
-}
-
-.red{
-    color:red;
-}
+.green{color:green;}
+.red{color:red;}
 </style>
 </head>
 
 <body>
 
-<h2>Solar Relay Dashboard</h2>
+<h2>Jim's Solar Power Control</h2>
 
 <p id="status">Not logged in</p>
 
@@ -59,232 +54,225 @@ input{
 <h3>Login</h3>
 
 <input id="email" type="email" placeholder="Email"><br>
-
 <input id="password" type="password" placeholder="Password"><br>
 
-<button onclick="login()">Login</button>
+<button id="loginBtn">Login</button>
 
 </div>
 
 <div id="dashboard" style="display:none;">
 
 <div class="card">
-
 <h3>Relay Control</h3>
 
-<button onclick="setRelay('0')">
-ON
-</button>
-
-<button onclick="setRelay('1')">
-OFF
-</button>
+<button id="onBtn">ON</button>
+<button id="offBtn">OFF</button>
 
 </div>
 
 <div class="card">
-
 <h3>Relay Status</h3>
-
-<div id="relayStatus" class="value">
---
-</div>
-
+<div id="relayStatus" class="value">--</div>
 </div>
 
 <div class="card">
-
 <h3>AC Voltage</h3>
-
-<div id="acVoltage" class="value">
-N/A
-</div>
-
+<div id="acVoltage" class="value">N/A</div>
 </div>
 
 <div class="card">
-
 <h3>DC Voltage</h3>
-
-<div id="dcVoltage" class="value">
-N/A
-</div>
-
+<div id="dcVoltage" class="value">N/A</div>
 </div>
 
 <div class="card">
-
-<button onclick="logout()">
-Logout
-</button>
-
+<button id="logoutBtn">Logout</button>
 </div>
 
 </div>
 
 <script type="module">
 
-import { initializeApp }
+import { initializeApp } 
 from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 
 import {
-  getAuth,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged
-}
+getAuth,
+signInWithEmailAndPassword,
+signOut,
+onAuthStateChanged
+} 
 from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 import {
-  getDatabase,
-  ref,
-  set,
-  onValue
-}
+getDatabase,
+ref,
+set,
+onValue
+} 
 from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
-const  = {
+const firebaseConfig = {
 
-  apiKey: "AIzaSyAIU_4JrFj1bI3cRXMUNCwGhtiUr4eodBQ",
+apiKey: "YOUR_API_KEY",
 
-  authDomain: "solarcontrol-12668.firebaseapp.com",
+authDomain: "solarcontrol-12668.firebaseapp.com",
 
-  databaseURL: "https://solarcontrol-12668-default-rtdb.asia-southeast1.firebasedatabase.app",
+databaseURL: "https://solarcontrol-12668-default-rtdb.asia-southeast1.firebasedatabase.app",
 
-  projectId: "solarcontrol-12668",
+projectId: "solarcontrol-12668",
 
-  storageBucket: "solarcontrol-12668.firebasestorage.app",
+storageBucket: "solarcontrol-12668.firebasestorage.app",
 
-  messagingSenderId: "566361176566",
+messagingSenderId: "566361176566",
 
-  appId: "1:566361176566:web:be3a4c901333c77a496fd7"
+appId: "1:566361176566:web:be3a4c901333c77a496fd7"
 
 };
 
-const app = initializeApp();
-
+const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-
 const db = getDatabase(app);
 
-window.login = async () => {
+console.log("App loaded");
 
-  const email =
-    document.getElementById("email").value;
 
-  const password =
-    document.getElementById("password").value;
+// ---------------- LOGIN ----------------
 
-  try {
+document.getElementById("loginBtn")
+.addEventListener("click", async () => {
 
-    await signInWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
+const email =
+document.getElementById("email").value;
 
-  } catch(err) {
+const password =
+document.getElementById("password").value;
 
-    alert(err.message);
+try {
 
-  }
+await signInWithEmailAndPassword(auth, email, password);
 
-};
+} catch(err) {
 
-window.logout = async () => {
+alert(err.message);
 
-  await signOut(auth);
+}
 
-};
+});
 
-window.setRelay = async (state) => {
 
-  try {
+// ---------------- LOGOUT ----------------
 
-    await set(
-      ref(db,"command_switch"),
-      state
-    );
+document.getElementById("logoutBtn")
+.addEventListener("click", async () => {
 
-  } catch(err) {
+await signOut(auth);
 
-    alert(err.message);
+});
 
-  }
 
-};
+// ---------------- RELAY ON ----------------
+
+document.getElementById("onBtn")
+.addEventListener("click", async () => {
+
+await set(ref(db,"command_switch"), "0");
+
+});
+
+
+// ---------------- RELAY OFF ----------------
+
+document.getElementById("offBtn")
+.addEventListener("click", async () => {
+
+await set(ref(db,"command_switch"), "1");
+
+});
+
+
+// ---------------- AUTH STATE ----------------
 
 onAuthStateChanged(auth,(user)=>{
 
-  if(user){
+if(user){
 
-    document.getElementById("status").innerText =
-      "Logged in: " + user.email;
+document.getElementById("status").innerText =
+"Logged in: " + user.email;
 
-    document.getElementById("loginBox").style.display =
-      "none";
+document.getElementById("loginBox").style.display =
+"none";
 
-    document.getElementById("dashboard").style.display =
-      "block";
+document.getElementById("dashboard").style.display =
+"block";
 
-  }
-  else{
+}
+else{
 
-    document.getElementById("status").innerText =
-      "Not logged in";
+document.getElementById("status").innerText =
+"Not logged in";
 
-    document.getElementById("loginBox").style.display =
-      "block";
+document.getElementById("loginBox").style.display =
+"block";
 
-    document.getElementById("dashboard").style.display =
-      "none";
+document.getElementById("dashboard").style.display =
+"none";
 
-  }
+}
 
 });
+
+
+// ---------------- RELAY STATUS ----------------
 
 onValue(ref(db,"status_switch"),(snapshot)=>{
 
-  const value = snapshot.val();
+const value = snapshot.val();
 
-  const el =
-    document.getElementById("relayStatus");
+const el =
+document.getElementById("relayStatus");
 
-  if(value === "relay_on"){
+if(value === "relay_on"){
 
-    el.innerHTML =
-      '<span class="green">RELAY ON</span>';
+el.innerHTML =
+'<span class="green">RELAY ON</span>';
 
-  }
-  else if(value === "relay_off"){
+}
+else if(value === "relay_off"){
 
-    el.innerHTML =
-      '<span class="red">RELAY OFF</span>';
+el.innerHTML =
+'<span class="red">RELAY OFF</span>';
 
-  }
-  else{
+}
+else{
 
-    el.innerText = "--";
+el.innerText = "--";
 
-  }
+}
 
 });
+
+
+// ---------------- AC VOLTAGE ----------------
 
 onValue(ref(db,"status_ac_voltage"),(snapshot)=>{
 
-  const value = snapshot.val();
+const value = snapshot.val();
 
-  document.getElementById("acVoltage").innerText =
-    value ? value + " V" : "N/A";
+document.getElementById("acVoltage").innerText =
+value ? value + " V" : "N/A";
 
 });
 
+
+// ---------------- DC VOLTAGE ----------------
+
 onValue(ref(db,"status_dc_voltage"),(snapshot)=>{
 
-  const value = snapshot.val();
+const value = snapshot.val();
 
-  document.getElementById("dcVoltage").innerText =
-    value ? value + " V" : "N/A";
+document.getElementById("dcVoltage").innerText =
+value ? value + " V" : "N/A";
 
 });
 
