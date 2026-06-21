@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>Jim's Solar SCADA Control</title>
+<title>Jim's Solar Control!</title>
 
 <style>
 body{
@@ -15,22 +15,20 @@ body{
     position:relative;
 }
 
-/* MAIN */
 .main{
     max-width:600px;
 }
 
-/* SCADA PANEL */
 .sysPanel{
     position:fixed;
     right:20px;
     top:20px;
-    width:240px;
-    border:1px solid #ccc;
+    width:220px;
+    border:1px solid #ddd;
     border-radius:10px;
-    padding:14px;
-    background:#f4f6f8;
-    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+    padding:12px;
+    background:#f9f9f9;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
 }
 
 .sysTitle{
@@ -40,28 +38,9 @@ body{
 }
 
 .sysItem{
-    margin:10px 0;
+    margin:8px 0;
     font-size:13px;
 }
-
-.bar{
-    height:8px;
-    background:#ddd;
-    border-radius:4px;
-    overflow:hidden;
-    margin-top:4px;
-}
-
-.barFill{
-    height:100%;
-    width:0%;
-    background:green;
-    transition:0.3s;
-}
-
-.statusOk{color:green;font-weight:bold;}
-.statusWarn{color:orange;font-weight:bold;}
-.statusBad{color:red;font-weight:bold;}
 
 .card{
     border:1px solid #ddd;
@@ -76,6 +55,12 @@ button{
     cursor:pointer;
 }
 
+input{
+    padding:10px;
+    margin:5px;
+    width:250px;
+}
+
 .value{
     font-size:22px;
     font-weight:bold;
@@ -83,31 +68,41 @@ button{
 
 .green{color:green;}
 .red{color:red;}
-.orange{color:orange;}
+
+.small{
+    font-size:12px;
+    color:#666;
+}
 </style>
 </head>
 
 <body>
 
-<h2>Jim's Solar SCADA Control</h2>
+<h2>Jim's Solar Power Control!</h2>
 
 <p id="status">Not logged in</p>
 
 <div class="main">
 
 <div id="loginBox" class="card">
+
 <h3>Login</h3>
+
 <input id="email" type="email" placeholder="Email"><br>
 <input id="password" type="password" placeholder="Password"><br>
+
 <button id="loginBtn">Login</button>
+
 </div>
 
 <div id="dashboard" style="display:none;">
 
 <div class="card">
-<h3>Control Panel</h3>
-<button id="onBtn">ON</button>
-<button id="offBtn">OFF</button>
+<h3>Failover Mode: Automatic</h3>
+<h4>Low Water Tank + Grid Outage Logic</h4>
+
+<button id="onBtn">Turn ON</button>
+<button id="offBtn">Turn OFF</button>
 </div>
 
 <div class="card">
@@ -117,12 +112,12 @@ button{
 
 <div class="card">
 <h3>AC Voltage</h3>
-<div id="acVoltage" class="value">--</div>
+<div id="acVoltage" class="value">N/A</div>
 </div>
 
 <div class="card">
 <h3>DC Voltage</h3>
-<div id="dcVoltage" class="value">--</div>
+<div id="dcVoltage" class="value">N/A</div>
 </div>
 
 <div class="card">
@@ -133,58 +128,47 @@ button{
 
 </div>
 
-<!-- SCADA PANEL -->
+<!-- SYSTEM MONITOR -->
 <div class="sysPanel">
-
-<div class="sysTitle">SYSTEM STATUS</div>
+<div class="sysTitle">System Monitor</div>
 
 <div class="sysItem">
-DEVICE:
-<span id="deviceStatus" class="statusWarn">UNKNOWN</span>
+CPU: <span id="cpuUsage">--</span>
 </div>
 
 <div class="sysItem">
-CPU: <span id="cpu">--</span> %
-</div>
-
-<div class="bar">
-<div id="cpuBar" class="barFill"></div>
+MEM: <span id="memUsage">--</span>
 </div>
 
 <div class="sysItem">
-MEMORY: <span id="mem">--</span> bytes
+UPTIME (sec): <span id="uptime">--</span>
 </div>
 
-<div class="bar">
-<div id="memBar" class="barFill"></div>
+<div class="small">
+Raw Firebase values
 </div>
-
-<div class="sysItem">
-UPTIME: <span id="uptime">--</span> sec
-</div>
-
-<div class="sysItem">
-LAST UPDATE: <span id="lastUpdate">--</span>
-</div>
-
 </div>
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { initializeApp } 
+from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+
 import {
 getAuth,
 signInWithEmailAndPassword,
 signOut,
 onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+} 
+from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 import {
 getDatabase,
 ref,
 set,
 onValue
-} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+} 
+from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
 const firebaseConfig = {
 apiKey: "AIzaSyCAPPjCvtuQ8gGgITH5gqcXBxlB0c9iU9E",
@@ -200,106 +184,108 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-let lastSeen = Date.now();
+// ---------------- LOGIN ----------------
+
+document.getElementById("loginBtn")
+.addEventListener("click", async () => {
+
+const email = document.getElementById("email").value;
+const password = document.getElementById("password").value;
+
+try {
+await signInWithEmailAndPassword(auth, email, password);
+} catch(err) {
+alert(err.message);
+}
+
+});
+
+// ---------------- LOGOUT ----------------
+
+document.getElementById("logoutBtn")
+.addEventListener("click", async () => {
+await signOut(auth);
+});
+
+// ---------------- CONTROL ----------------
+
+document.getElementById("onBtn")
+.addEventListener("click", async () => {
+await set(ref(db,"command_switch"), "0");
+});
+
+document.getElementById("offBtn")
+.addEventListener("click", async () => {
+await set(ref(db,"command_switch"), "1");
+});
 
 // ---------------- AUTH ----------------
 
 onAuthStateChanged(auth,(user)=>{
+
 if(user){
-document.getElementById("status").innerText="Logged in: "+user.email;
+document.getElementById("status").innerText =
+"Logged in: " + user.email;
+
 document.getElementById("loginBox").style.display="none";
 document.getElementById("dashboard").style.display="block";
 }
 else{
 document.getElementById("status").innerText="Not logged in";
+
 document.getElementById("loginBox").style.display="block";
 document.getElementById("dashboard").style.display="none";
 }
+
 });
 
-// ---------------- CONTROL ----------------
+// ---------------- RELAY STATUS ----------------
 
-document.getElementById("onBtn").onclick = () =>
-set(ref(db,"command_switch"), "0");
+onValue(ref(db,"status_switch"),(snapshot)=>{
 
-document.getElementById("offBtn").onclick = () =>
-set(ref(db,"command_switch"), "1");
+const v = snapshot.val();
+const el = document.getElementById("relayStatus");
 
-document.getElementById("logoutBtn").onclick = () =>
-signOut(auth);
-
-// ---------------- RELAY ----------------
-
-onValue(ref(db,"status_switch"),(snap)=>{
-const v = snap.val();
-document.getElementById("relayStatus").innerHTML =
-v==="relay_on"
-? '<span class="green">ON</span>'
-: '<span class="red">OFF</span>';
-});
-
-// ---------------- VOLTAGE ----------------
-
-onValue(ref(db,"status_ac_voltage"),(s)=>{
-document.getElementById("acVoltage").innerText = s.val() ?? "--";
-});
-
-onValue(ref(db,"status_dc_voltage"),(s)=>{
-document.getElementById("dcVoltage").innerText = s.val() ?? "--";
-});
-
-// ---------------- SYSTEM SCADA ----------------
-
-// CPU
-onValue(ref(db,"cpu"),(s)=>{
-const v = Number(s.val());
-document.getElementById("cpu").innerText = v;
-
-const bar = document.getElementById("cpuBar");
-bar.style.width = v + "%";
-
-if(v < 50) bar.style.background="green";
-else if(v < 80) bar.style.background="orange";
-else bar.style.background="red";
-});
-
-// MEMORY
-onValue(ref(db,"mem"),(s)=>{
-const v = Number(s.val());
-document.getElementById("mem").innerText = v;
-
-const bar = document.getElementById("memBar");
-const percent = Math.min((v / 50000) * 100, 100);
-
-bar.style.width = percent + "%";
-
-if(percent < 50) bar.style.background="green";
-else if(percent < 80) bar.style.background="orange";
-else bar.style.background="red";
-});
-
-// UPTIME + HEALTH
-onValue(ref(db,"uptime"),(s)=>{
-const v = s.val();
-document.getElementById("uptime").innerText = v ?? "--";
-
-lastSeen = Date.now();
-document.getElementById("lastUpdate").innerText =
-new Date().toLocaleTimeString();
-
-document.getElementById("deviceStatus").innerText="ONLINE";
-document.getElementById("deviceStatus").className="statusOk";
-});
-
-// OFFLINE DETECTION
-setInterval(()=>{
-const diff = Date.now() - lastSeen;
-
-if(diff > 5000){
-document.getElementById("deviceStatus").innerText="OFFLINE";
-document.getElementById("deviceStatus").className="statusBad";
+if(v === "relay_on"){
+el.innerHTML = '<span class="green">RELAY ON</span>';
 }
-},2000);
+else if(v === "relay_off"){
+el.innerHTML = '<span class="red">RELAY OFF</span>';
+}
+else{
+el.innerText="--";
+}
+
+});
+
+// ---------------- VOLTAGES ----------------
+
+onValue(ref(db,"status_ac_voltage"),(snapshot)=>{
+document.getElementById("acVoltage").innerText =
+snapshot.val() ?? "N/A";
+});
+
+onValue(ref(db,"status_dc_voltage"),(snapshot)=>{
+document.getElementById("dcVoltage").innerText =
+snapshot.val() ?? "N/A";
+});
+
+// ---------------- SYSTEM RAW VALUES ----------------
+
+onValue(ref(db,"cpu"),(snapshot)=>{
+document.getElementById("cpuUsage").innerText =
+snapshot.val() ?? "--";
+});
+
+onValue(ref(db,"mem"),(snapshot)=>{
+document.getElementById("memUsage").innerText =
+snapshot.val() ?? "--";
+});
+
+onValue(ref(db,"uptime"),(snapshot)=>{
+document.getElementById("uptime").innerText =
+snapshot.val() ?? "--";
+});
 
 </script>
 
