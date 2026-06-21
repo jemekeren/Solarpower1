@@ -4,15 +4,64 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>Jim's Solar Control!</title>
+<title>Jim's Solar SCADA Control</title>
 
 <style>
 body{
     font-family:Arial;
-    max-width:800px;
+    max-width:900px;
     margin:auto;
     padding:20px;
+    position:relative;
 }
+
+/* MAIN */
+.main{
+    max-width:600px;
+}
+
+/* SCADA PANEL */
+.sysPanel{
+    position:fixed;
+    right:20px;
+    top:20px;
+    width:240px;
+    border:1px solid #ccc;
+    border-radius:10px;
+    padding:14px;
+    background:#f4f6f8;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+}
+
+.sysTitle{
+    font-size:14px;
+    font-weight:bold;
+    margin-bottom:10px;
+}
+
+.sysItem{
+    margin:10px 0;
+    font-size:13px;
+}
+
+.bar{
+    height:8px;
+    background:#ddd;
+    border-radius:4px;
+    overflow:hidden;
+    margin-top:4px;
+}
+
+.barFill{
+    height:100%;
+    width:0%;
+    background:green;
+    transition:0.3s;
+}
+
+.statusOk{color:green;font-weight:bold;}
+.statusWarn{color:orange;font-weight:bold;}
+.statusBad{color:red;font-weight:bold;}
 
 .card{
     border:1px solid #ddd;
@@ -27,12 +76,6 @@ button{
     cursor:pointer;
 }
 
-input{
-    padding:10px;
-    margin:5px;
-    width:250px;
-}
-
 .value{
     font-size:22px;
     font-weight:bold;
@@ -40,50 +83,46 @@ input{
 
 .green{color:green;}
 .red{color:red;}
+.orange{color:orange;}
 </style>
 </head>
 
 <body>
 
-<h2>Jim's Solar Power Control!</h2>
+<h2>Jim's Solar SCADA Control</h2>
 
 <p id="status">Not logged in</p>
 
+<div class="main">
+
 <div id="loginBox" class="card">
-
 <h3>Login</h3>
-
 <input id="email" type="email" placeholder="Email"><br>
 <input id="password" type="password" placeholder="Password"><br>
-
 <button id="loginBtn">Login</button>
-
 </div>
 
 <div id="dashboard" style="display:none;">
 
 <div class="card">
-<h3>Failover Mode: Automatic - Fixed Wiring </h3>
-<h4>Failover Logic -> Low Water Tank Level and City Power Outage </h4>
-<h3 style="color: #38a169;">Test Solar Power System Availability</h3>
-<button id="onBtn">Turn ON me</button>
-<button id="offBtn">Turn OFF me</button>
-
+<h3>Control Panel</h3>
+<button id="onBtn">ON</button>
+<button id="offBtn">OFF</button>
 </div>
 
 <div class="card">
-<h3>Relay Module Status</h3>
+<h3>Relay Status</h3>
 <div id="relayStatus" class="value">--</div>
 </div>
 
 <div class="card">
-<h3>Inverter AC OUTPUT Voltage to Jet Pump</h3>
-<div id="acVoltage" class="value">N/A</div>
+<h3>AC Voltage</h3>
+<div id="acVoltage" class="value">--</div>
 </div>
 
 <div class="card">
-<h3>DC Voltage Solar Charging Output / Battery Voltage</h3>
-<div id="dcVoltage" class="value">N/A</div>
+<h3>DC Voltage</h3>
+<div id="dcVoltage" class="value">--</div>
 </div>
 
 <div class="card">
@@ -92,191 +131,175 @@ input{
 
 </div>
 
+</div>
+
+<!-- SCADA PANEL -->
+<div class="sysPanel">
+
+<div class="sysTitle">SYSTEM STATUS</div>
+
+<div class="sysItem">
+DEVICE:
+<span id="deviceStatus" class="statusWarn">UNKNOWN</span>
+</div>
+
+<div class="sysItem">
+CPU: <span id="cpu">--</span> %
+</div>
+
+<div class="bar">
+<div id="cpuBar" class="barFill"></div>
+</div>
+
+<div class="sysItem">
+MEMORY: <span id="mem">--</span> bytes
+</div>
+
+<div class="bar">
+<div id="memBar" class="barFill"></div>
+</div>
+
+<div class="sysItem">
+UPTIME: <span id="uptime">--</span> sec
+</div>
+
+<div class="sysItem">
+LAST UPDATE: <span id="lastUpdate">--</span>
+</div>
+
+</div>
+
 <script type="module">
 
-import { initializeApp } 
-from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import {
 getAuth,
 signInWithEmailAndPassword,
 signOut,
 onAuthStateChanged
-} 
-from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 import {
 getDatabase,
 ref,
 set,
 onValue
-} 
-from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
 const firebaseConfig = {
-
 apiKey: "AIzaSyCAPPjCvtuQ8gGgITH5gqcXBxlB0c9iU9E",
-
 authDomain: "solarpowercontrol-21a1c.firebaseapp.com",
-
 databaseURL: "https://solarpowercontrol-21a1c-default-rtdb.asia-southeast1.firebasedatabase.app/",
-
 projectId: "solarpowercontrol-21a1c",
-
 storageBucket: "solarpowercontrol-21a1c.firebasestorage.app",
-
 messagingSenderId: "836080376430",
-
 appId: "1:836080376430:web:12bd6396690a6ff3cde47f"
-
 };
-console.log("Firebase app created");
-    
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-console.log("App loaded");
+let lastSeen = Date.now();
 
-
-// ---------------- LOGIN ----------------
-
-document.getElementById("loginBtn")
-.addEventListener("click", async () => {
-
-const email =
-document.getElementById("email").value;
-
-const password =
-document.getElementById("password").value;
-
-try {
-
-await signInWithEmailAndPassword(auth, email, password);
-
-} catch(err) {
-
-alert(err.message);
-
-}
-
-});
-
-
-// ---------------- LOGOUT ----------------
-
-document.getElementById("logoutBtn")
-.addEventListener("click", async () => {
-
-await signOut(auth);
-
-});
-
-
-// ---------------- RELAY ON ----------------
-
-document.getElementById("onBtn")
-.addEventListener("click", async () => {
-
-await set(ref(db,"command_switch"), "0");
-
-});
-
-
-// ---------------- RELAY OFF ----------------
-
-document.getElementById("offBtn")
-.addEventListener("click", async () => {
-
-await set(ref(db,"command_switch"), "1");
-
-});
-
-
-// ---------------- AUTH STATE ----------------
+// ---------------- AUTH ----------------
 
 onAuthStateChanged(auth,(user)=>{
-
 if(user){
-
-document.getElementById("status").innerText =
-"Logged in: " + user.email;
-
-document.getElementById("loginBox").style.display =
-"none";
-
-document.getElementById("dashboard").style.display =
-"block";
-
+document.getElementById("status").innerText="Logged in: "+user.email;
+document.getElementById("loginBox").style.display="none";
+document.getElementById("dashboard").style.display="block";
 }
 else{
-
-document.getElementById("status").innerText =
-"Not logged in";
-
-document.getElementById("loginBox").style.display =
-"block";
-
-document.getElementById("dashboard").style.display =
-"none";
-
+document.getElementById("status").innerText="Not logged in";
+document.getElementById("loginBox").style.display="block";
+document.getElementById("dashboard").style.display="none";
 }
-
 });
 
+// ---------------- CONTROL ----------------
 
-// ---------------- RELAY STATUS ----------------
+document.getElementById("onBtn").onclick = () =>
+set(ref(db,"command_switch"), "0");
 
-onValue(ref(db,"status_switch"),(snapshot)=>{
+document.getElementById("offBtn").onclick = () =>
+set(ref(db,"command_switch"), "1");
 
-const value = snapshot.val();
+document.getElementById("logoutBtn").onclick = () =>
+signOut(auth);
 
-const el =
-document.getElementById("relayStatus");
+// ---------------- RELAY ----------------
 
-if(value === "relay_on"){
-
-el.innerHTML =
-'<span class="green">RELAY ON</span>';
-
-}
-else if(value === "relay_off"){
-
-el.innerHTML =
-'<span class="red">RELAY OFF</span>';
-
-}
-else{
-
-el.innerText = "--";
-
-}
-
+onValue(ref(db,"status_switch"),(snap)=>{
+const v = snap.val();
+document.getElementById("relayStatus").innerHTML =
+v==="relay_on"
+? '<span class="green">ON</span>'
+: '<span class="red">OFF</span>';
 });
 
+// ---------------- VOLTAGE ----------------
 
-// ---------------- AC VOLTAGE ----------------
-
-onValue(ref(db,"status_ac_voltage"),(snapshot)=>{
-
-const value = snapshot.val();
-
-document.getElementById("acVoltage").innerText =
-value ? value + " V" : "N/A";
-
+onValue(ref(db,"status_ac_voltage"),(s)=>{
+document.getElementById("acVoltage").innerText = s.val() ?? "--";
 });
 
-
-// ---------------- DC VOLTAGE ----------------
-
-onValue(ref(db,"status_dc_voltage"),(snapshot)=>{
-
-const value = snapshot.val();
-
-document.getElementById("dcVoltage").innerText =
-value ? value + " V" : "N/A";
-
+onValue(ref(db,"status_dc_voltage"),(s)=>{
+document.getElementById("dcVoltage").innerText = s.val() ?? "--";
 });
+
+// ---------------- SYSTEM SCADA ----------------
+
+// CPU
+onValue(ref(db,"cpu"),(s)=>{
+const v = Number(s.val());
+document.getElementById("cpu").innerText = v;
+
+const bar = document.getElementById("cpuBar");
+bar.style.width = v + "%";
+
+if(v < 50) bar.style.background="green";
+else if(v < 80) bar.style.background="orange";
+else bar.style.background="red";
+});
+
+// MEMORY
+onValue(ref(db,"mem"),(s)=>{
+const v = Number(s.val());
+document.getElementById("mem").innerText = v;
+
+const bar = document.getElementById("memBar");
+const percent = Math.min((v / 50000) * 100, 100);
+
+bar.style.width = percent + "%";
+
+if(percent < 50) bar.style.background="green";
+else if(percent < 80) bar.style.background="orange";
+else bar.style.background="red";
+});
+
+// UPTIME + HEALTH
+onValue(ref(db,"uptime"),(s)=>{
+const v = s.val();
+document.getElementById("uptime").innerText = v ?? "--";
+
+lastSeen = Date.now();
+document.getElementById("lastUpdate").innerText =
+new Date().toLocaleTimeString();
+
+document.getElementById("deviceStatus").innerText="ONLINE";
+document.getElementById("deviceStatus").className="statusOk";
+});
+
+// OFFLINE DETECTION
+setInterval(()=>{
+const diff = Date.now() - lastSeen;
+
+if(diff > 5000){
+document.getElementById("deviceStatus").innerText="OFFLINE";
+document.getElementById("deviceStatus").className="statusBad";
+}
+},2000);
 
 </script>
 
