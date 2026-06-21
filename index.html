@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>Jim's Solar Power Control</title>
+<title>Solar Control</title>
 
 <style>
 body{
     font-family:Arial,sans-serif;
-    max-width:900px;
+    max-width:800px;
     margin:auto;
     padding:20px;
 }
@@ -22,9 +22,8 @@ body{
 }
 
 button{
-    padding:12px 25px;
+    padding:12px 20px;
     margin:5px;
-    font-size:16px;
     cursor:pointer;
 }
 
@@ -35,9 +34,8 @@ input{
 }
 
 .value{
-    font-size:22px;
+    font-size:24px;
     font-weight:bold;
-    color:#0066cc;
 }
 
 .green{
@@ -52,7 +50,7 @@ input{
 
 <body>
 
-<h2>Solar Power Dashboard</h2>
+<h2>Solar Relay Dashboard</h2>
 
 <p id="status">Not logged in</p>
 
@@ -88,8 +86,8 @@ OFF
 
 <h3>Relay Status</h3>
 
-<div class="value" id="relayStatus">
-Loading...
+<div id="relayStatus" class="value">
+--
 </div>
 
 </div>
@@ -98,8 +96,8 @@ Loading...
 
 <h3>AC Voltage</h3>
 
-<div class="value" id="acVoltage">
---
+<div id="acVoltage" class="value">
+N/A
 </div>
 
 </div>
@@ -108,8 +106,8 @@ Loading...
 
 <h3>DC Voltage</h3>
 
-<div class="value" id="dcVoltage">
---
+<div id="dcVoltage" class="value">
+N/A
 </div>
 
 </div>
@@ -130,37 +128,30 @@ import { initializeApp }
 from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 
 import {
-getAuth,
-signInWithEmailAndPassword,
-signOut,
-onAuthStateChanged
+  getAuth,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
 }
 from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 import {
-getDatabase,
-ref,
-set,
-onValue
+  getDatabase,
+  ref,
+  set,
+  onValue
 }
 from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
 const firebaseConfig = {
 
-apiKey: "AIzaSyAIU_4JrFj1bI3cRXMUNCwGhtiUr4eodBQ",
-
-authDomain: "solarcontrol-12668.firebaseapp.com",
-
-databaseURL:
-"https://solarcontrol-12668-default-rtdb.asia-southeast1.firebasedatabase.app",
-
-projectId: "solarcontrol-12668",
-
-storageBucket: "solarcontrol-12668.firebasestorage.app",
-
-messagingSenderId: "566361176566",
-
-appId: "1:566361176566:web:be3a4c901333c77a496fd7"
+ apiKey: "AIzaSyAIU_4JrFj1bI3cRXMUNCwGhtiUr4eodBQ",
+ authDomain: "solarcontrol-12668.firebaseapp.com",
+ databaseURL: "https://solarcontrol-12668-default-rtdb.asia-southeast1.firebasedatabase.app",
+ projectId: "solarcontrol-12668",
+ storageBucket: "solarcontrol-12668.firebasestorage.app",
+ messagingSenderId: "566361176566",
+ appId: "1:566361176566:web:be3a4c901333c77a496fd7",
 
 };
 
@@ -172,117 +163,122 @@ const db = getDatabase(app);
 
 window.login = async () => {
 
-const email =
-document.getElementById("email").value;
+  const email =
+    document.getElementById("email").value;
 
-const password =
-document.getElementById("password").value;
+  const password =
+    document.getElementById("password").value;
 
-try {
+  try {
 
-await signInWithEmailAndPassword(
-auth,
-email,
-password
-);
+    await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
 
-} catch(err){
+  } catch(err) {
 
-alert(err.message);
+    alert(err.message);
 
-}
+  }
 
 };
 
 window.logout = async () => {
-await signOut(auth);
+
+  await signOut(auth);
+
 };
 
-window.setRelay = async(state)=>{
+window.setRelay = async (state) => {
 
-try{
+  try {
 
-await set(
-ref(db,"command_switch"),
-state
-);
+    await set(
+      ref(db,"command_switch"),
+      state
+    );
 
-}
-catch(err){
+  } catch(err) {
 
-alert(err.message);
+    alert(err.message);
 
-}
+  }
 
 };
 
 onAuthStateChanged(auth,(user)=>{
 
-if(user){
+  if(user){
 
-document.getElementById("status").innerText =
-"Logged in: " + user.email;
+    document.getElementById("status").innerText =
+      "Logged in: " + user.email;
 
-document.getElementById("loginBox").style.display =
-"none";
+    document.getElementById("loginBox").style.display =
+      "none";
 
-document.getElementById("dashboard").style.display =
-"block";
+    document.getElementById("dashboard").style.display =
+      "block";
 
-}
-else{
+  }
+  else{
 
-document.getElementById("status").innerText =
-"Not logged in";
+    document.getElementById("status").innerText =
+      "Not logged in";
 
-document.getElementById("loginBox").style.display =
-"block";
+    document.getElementById("loginBox").style.display =
+      "block";
 
-document.getElementById("dashboard").style.display =
-"none";
+    document.getElementById("dashboard").style.display =
+      "none";
 
-}
-
-});
-
-onValue(ref(db,"status_ac_voltage"),(snapshot)=>{
-
-document.getElementById("acVoltage").innerText =
-snapshot.val() ?? "--";
-
-});
-
-onValue(ref(db,"status_dc_voltage"),(snapshot)=>{
-
-document.getElementById("dcVoltage").innerText =
-snapshot.val() ?? "--";
+  }
 
 });
 
 onValue(ref(db,"status_switch"),(snapshot)=>{
 
-const value = snapshot.val();
+  const value = snapshot.val();
 
-const el =
-document.getElementById("relayStatus");
+  const el =
+    document.getElementById("relayStatus");
 
-if(value === "relay_on"){
+  if(value === "relay_on"){
 
-el.innerHTML =
-'<span class="green">RELAY ON</span>';
+    el.innerHTML =
+      '<span class="green">RELAY ON</span>';
 
-}
-else if(value === "relay_off"){
+  }
+  else if(value === "relay_off"){
 
-el.innerHTML =
-'<span class="red">RELAY OFF</span>';
+    el.innerHTML =
+      '<span class="red">RELAY OFF</span>';
 
-}
-else{
+  }
+  else{
 
-el.innerText = "--";
+    el.innerText = "--";
 
-}
+  }
+
+});
+
+onValue(ref(db,"status_ac_voltage"),(snapshot)=>{
+
+  const value = snapshot.val();
+
+  document.getElementById("acVoltage").innerText =
+    value ? value + " V" : "N/A";
+
+});
+
+onValue(ref(db,"status_dc_voltage"),(snapshot)=>{
+
+  const value = snapshot.val();
+
+  document.getElementById("dcVoltage").innerText =
+    value ? value + " V" : "N/A";
 
 });
 
