@@ -1,0 +1,8 @@
+Pull Request Information
+========================
+Date/Time Created: 2026-06-27 10:44:41
+PR Number: 5
+PR Title: Fix heading exclamation marks in index.html
+PR Author: jemekeren
+PR URL: https://github.com/jemekeren/Solarpower1/pull/5
+Branch: br1
