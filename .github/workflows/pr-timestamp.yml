@@ -41,6 +41,12 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add "${{ steps.datetime.outputs.filename }}"
+        git commit -m "chore: Add PR timestamp file ${{ steps.datetime.outputs.filename }}"
+        git push origin main
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+
+
 
     - name: Validate HTML syntax
       id: html-syntax
@@ -90,9 +96,3 @@ jobs:
           echo "**File Checked**: index.html" >> $GITHUB_STEP_SUMMARY
 
 
-
-        
-        git commit -m "chore: Add PR timestamp file ${{ steps.datetime.outputs.filename }}"
-        git push origin main
-      env:
-        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
