@@ -41,6 +41,57 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add "${{ steps.datetime.outputs.filename }}"
+
+    - name: Validate HTML syntax
+      id: html-syntax
+      run: |
+          pip install html5lib
+          python -m html5lib index.html > syntax_check_output.txt 2>&1
+          echo "syntax_status=success" >> $GITHUB_OUTPUT
+        continue-on-error: true
+      
+     - name: Capture syntax check results
+       if: always()
+        run: |
+          if [ ${{ steps.html-syntax.outcome }} = "success" ]; then
+            echo "✅ HTML Syntax Check PASSED"
+          else
+            echo "❌ HTML Syntax Check FAILED"
+            cat syntax_check_output.txt || true
+          fi
+      
+      - name: Lint HTML with htmlhint
+        id: htmlhint-lint
+        run: |
+          npm install -g htmlhint
+          htmlhint index.html > lint_output.txt 2>&1
+          echo "lint_status=success" >> $GITHUB_OUTPUT
+        continue-on-error: true
+      
+      - name: Capture linting results
+        if: always()
+        run: |
+          if [ ${{ steps.htmlhint-lint.outcome }} = "success" ]; then
+            echo "✅ HTMLHint Linting PASSED"
+          else
+            echo "❌ HTMLHint Linting FAILED"
+            cat lint_output.txt || true
+          fi
+      
+      - name: Summary Report
+        if: always()
+        run: |
+          echo "## Workflow Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Checkout Status: ${{ steps.checkout.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "### HTML Syntax Check: ${{ steps.html-syntax.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "### HTMLHint Linting: ${{ steps.htmlhint-lint.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**File Checked**: index.html" >> $GITHUB_STEP_SUMMARY
+
+
+
+        
         git commit -m "chore: Add PR timestamp file ${{ steps.datetime.outputs.filename }}"
         git push origin main
       env:
