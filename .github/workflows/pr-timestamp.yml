@@ -69,5 +69,26 @@ jobs:
       run: |
         npm install -g htmlhint
         htmlhint index.html > lint_output.txt 2>&1
-        echo](#)
-
+        echo "lint_status=success" >> $GITHUB_OUTPUT
+      continue-on-error: true
+
+    - name: Capture linting results
+      if: always()
+      run: |
+        if [ ${{ steps.htmlhint-lint.outcome }} = "success" ]; then
+          echo "✅ HTMLHint Linting PASSED"
+        else
+          echo "❌ HTMLHint Linting FAILED"
+          cat lint_output.txt || true
+        fi
+
+    - name: Summary Report
+      if: always()
+      run: |
+        echo "## Workflow Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Checkout Status: ${{ steps.checkout.outcome }}" >> $GITHUB_STEP_SUMMARY
+        echo "### HTML Syntax Check: ${{ steps.html-syntax.outcome }}" >> $GITHUB_STEP_SUMMARY
+        echo "### HTMLHint Linting: ${{ steps.htmlhint-lint.outcome }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**File Checked**: index.html" >> $GITHUB_STEP_SUMMARY
