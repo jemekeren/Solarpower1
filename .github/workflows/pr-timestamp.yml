@@ -1,0 +1,45 @@
+name: Create Date-Time File on PR
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize]
+
+jobs:
+  create-datetime-file:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout main branch
+      uses: actions/checkout@v3
+      with:
+        ref: main
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Generate datetime filename
+      id: datetime
+      run: |
+        DATETIME=$(date '+%Y-%m-%d_%H-%M-%S')
+        echo "filename=$DATETIME.txt" >> $GITHUB_OUTPUT
+        echo "Filename: $DATETIME.txt"
+
+    - name: Create file with PR information
+      run: |
+        cat > "${{ steps.datetime.outputs.filename }}" << EOF
+        Pull Request Information
+        ========================
+        Date/Time Created: $(date '+%Y-%m-%d %H:%M:%S')
+        PR Number: ${{ github.event.pull_request.number }}
+        PR Title: ${{ github.event.pull_request.title }}
+        PR Author: ${{ github.event.pull_request.user.login }}
+        PR URL: ${{ github.event.pull_request.html_url }}
+        Branch: ${{ github.event.pull_request.head.ref }}
+        EOF
+
+    - name: Commit and push file to main
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add "${{ steps.datetime.outputs.filename }}"
+        git commit -m "chore: Add PR timestamp file ${{ steps.datetime.outputs.filename }}"
+        git push origin main
