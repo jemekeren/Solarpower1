@@ -176,8 +176,8 @@ import {
 getDatabase,
 ref,
 set,
-onValue
-} 
+get
+}
 from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
 const firebaseConfig = {
@@ -250,53 +250,105 @@ document.getElementById("dashboard").style.display="none";
 });
 
 // ---------------- RELAY STATUS ----------------
+// ---------------- POLLING ----------------
 
-onValue(ref(db,"status_switch"),(snapshot)=>{
+async function updateData() {
 
-const v = snapshot.val();
-const el = document.getElementById("relayStatus");
+    try {
 
-if(v === "relay_on"){
-el.innerHTML = '<span class="green">RELAY ON</span>';
+        // Relay Status
+        let snapshot = await get(ref(db, "status_switch"));
+
+        if (snapshot.exists()) {
+
+            const v = String(snapshot.val()).trim().toLowerCase();
+            const el = document.getElementById("relayStatus");
+
+            if (v === "relay_on") {
+                el.innerHTML = '<span class="green">RELAY ON</span>';
+            }
+            else if (v === "relay_off") {
+                el.innerHTML = '<span class="red">RELAY OFF</span>';
+            }
+            else {
+                el.innerText = "--";
+            }
+        }
+
+        // AC Voltage
+        snapshot = await get(ref(db, "status_ac_voltage"));
+        document.getElementById("acVoltage").innerText =
+            snapshot.exists() ? snapshot.val() : "N/A";
+
+        // DC Battery Voltage
+        snapshot = await get(ref(db, "status_dc_voltage"));
+        document.getElementById("dcVoltage").innerText =
+            snapshot.exists() ? snapshot.val() : "N/A";
+
+        // DC Charging Voltage
+        snapshot = await get(ref(db, "status_dc_solar_voltage"));
+        document.getElementById("dcSolarVoltage").innerText =
+            snapshot.exists() ? snapshot.val() : "N/A";
+
+        // DC Charging Current
+        snapshot = await get(ref(db, "status_dc_solar_current"));
+        document.getElementById("dcSolarCurr").innerText =
+            snapshot.exists() ? snapshot.val() : "N/A";
+
+        // CPU
+        snapshot = await get(ref(db, "cpu"));
+        document.getElementById("cpuUsage").innerText =
+            snapshot.exists() ? snapshot.val() : "--";
+
+        // Memory
+        snapshot = await get(ref(db, "mem"));
+        document.getElementById("memUsage").innerText =
+            snapshot.exists() ? snapshot.val() : "--";
+
+        // Uptime
+        snapshot = await get(ref(db, "uptime"));
+        document.getElementById("uptime").innerText =
+            snapshot.exists() ? snapshot.val() : "--";
+
+    }
+    catch (err) {
+        console.error("Polling Error:", err);
+    }
 }
-else if(v === "relay_off"){
-el.innerHTML = '<span class="red">RELAY OFF</span>';
-}
-else{
-el.innerText="--";
-}
+
+// Start polling after login
+let pollTimer = null;
+
+onAuthStateChanged(auth, (user) => {
+
+    if (user) {
+
+        document.getElementById("status").innerText =
+            "Logged in: " + user.email;
+
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("dashboard").style.display = "block";
+
+        updateData();
+
+        if (!pollTimer) {
+            pollTimer = setInterval(updateData, 2000);
+        }
+
+    } else {
+
+        document.getElementById("status").innerText = "Not logged in";
+
+        document.getElementById("loginBox").style.display = "block";
+        document.getElementById("dashboard").style.display = "none";
+
+        if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+        }
+    }
 
 });
-
-// ---------------- VOLTAGES ----------------
-
-onValue(ref(db,"status_ac_voltage"),(snapshot)=>{
-document.getElementById("acVoltage").innerText =
-snapshot.val() ?? "N/A";
-});
-
-onValue(ref(db,"status_dc_voltage"),(snapshot)=>{
-document.getElementById("dcVoltage").innerText =
-snapshot.val() ?? "N/A";
-});
-
-// ---------------- SYSTEM RAW VALUES ----------------
-
-onValue(ref(db,"cpu"),(snapshot)=>{
-document.getElementById("cpuUsage").innerText =
-snapshot.val() ?? "--";
-});
-
-onValue(ref(db,"mem"),(snapshot)=>{
-document.getElementById("memUsage").innerText =
-snapshot.val() ?? "--";
-});
-
-onValue(ref(db,"uptime"),(snapshot)=>{
-document.getElementById("uptime").innerText =
-snapshot.val() ?? "--";
-});
-
 </script>
 
 </body>
